@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 #===============================================================================
 #
-#         FILE:  check_redis.pl
+#         FILE:  check_resque.pl
 #
-#        USAGE:  ./check_redis.pl
+#        USAGE:  ./check_resque.pl
 #
 #       AUTHOR:  Tomoyuki Sakurai, <tomoyukis@reallyenglish.com>
 #      CREATED:  02/16/11 08:38:50
@@ -40,6 +40,11 @@ $p->add_arg(
     default => 6379,
 );
 $p->add_arg(
+    spec    => 'password=s',
+    help    => "--password=<password>\n\tdefault: (none)",
+    default => '',
+);
+$p->add_arg(
     spec    => 'warning|w=i',
     help    => "-w, --warning <N> the length of queue\n\tdefault: 10",
     default => 10,
@@ -74,11 +79,13 @@ my $r;
 eval {
     # XXX Redis dies when connection refused (IO::Socket::INET->new)
     # XXX Redis doesn't handle timeout at all
+    # added password support ala  https://github.com/melo/perl-redis/issues/11 --nick@kavassalis.com
     local $SIG{ALRM} = sub { die "connection timeout\n"; };
     alarm $p->opts->timeout;
     $r = Redis->new(
         server => sprintf( "%s:%d", $p->opts->host, $p->opts->port ),
         debug  => $p->opts->verbose,
+        password => $p->opts->password,
     );
     alarm 0;
 };
